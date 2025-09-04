@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RAG Widget — Test Page</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        margin: 0; padding: 32px; line-height: 1.5;
+      }
+      .wrap { max-width: 860px; margin: 0 auto; }
+      h1 { margin: 0 0 8px 0; font-size: 28px; }
+      p { color: #6b7280; }
+      code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #0b1020; color: #e5e7eb; }
+        p { color: #9ca3af; }
+        code { background: #111827; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Widget Test Page</h1>
+      <p>
+        The floating chat bubble appears at the bottom-right. Click it to open the
+        embedded <code>widget.html</code> UI. Your API is expected at
+        <code>http://localhost:8000</code>.
+      </p>
+    </div>
+
+    <!-- Embed the widget loader. It will inject a bubble and an iframe. -->
+    <script src="./widget.js"
+            data-src="./widget.html"
+            data-base="http://localhost:8000"
+            defer></script>
+  </body>
+  </html>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Chat Widget</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #0f172a;
+        --panel-2: #111827;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --primary: #6d28d9;
+        --primary-2: #8b5cf6;
+        --me: #1d4ed8;
+        --bot: #1f2937;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 600px at 90% -10%, rgba(109,40,217,0.25), transparent 60%),
+          radial-gradient(800px 400px at -10% 100%, rgba(30,64,175,0.25), transparent 60%),
+          var(--bg);
+      }
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        gap: 10px;
+        padding: 12px;
+      }
+      /* Top bar */
+      #topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        background: linear-gradient(90deg, var(--panel), var(--panel-2));
+        border: 1px solid #20263a; border-radius: 14px; padding: 10px 12px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+      }
+      .brand { display: flex; align-items: center; gap: 10px; }
+      .logo { width: 30px; height: 30px; border-radius: 10px; background:
+        radial-gradient(12px 12px at 30% 35%, #fff, rgba(255,255,255,0) 60%),
+        linear-gradient(135deg, var(--primary), var(--primary-2));
+        box-shadow: inset 0 0 12px rgba(255,255,255,0.15), 0 6px 14px rgba(109,40,217,0.35);
+        position: relative;
+      }
+      .logo::after { content: ""; position: absolute; inset: 6px 6px 6px 6px; border-radius: 7px; background:
+        radial-gradient(8px 8px at 65% 35%, rgba(255,255,255,0.9), transparent 60%);
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.25);
+      }
+      .title { font-weight: 600; letter-spacing: 0.2px; }
+      .hint { color: var(--muted); font-size: 12px; }
+
+      /* Site form */
+      #site-form { display: flex; gap: 8px; align-items: center; background: rgba(17,24,39,0.6);
+        border: 1px solid #20263a; border-radius: 12px; padding: 8px; }
+      #site { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #263043; background: #0b1220; color: var(--text);
+        outline: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
+      #site::placeholder { color: #64748b; }
+      #load, #send { padding: 10px 14px; border: 1px solid #4c1d95; border-radius: 10px; background: linear-gradient(180deg, var(--primary-2), var(--primary)); color: #fff; cursor: pointer; font-weight: 600; }
+      #load:hover, #send:hover { filter: brightness(1.05); }
+      #load:disabled, #send:disabled { opacity: 0.6; cursor: not-allowed; }
+      #status { margin-left: 6px; color: var(--muted); }
+
+      /* Chat area */
+      #chat {
+        flex: 1; overflow: auto; border: 1px solid #20263a; border-radius: 14px; padding: 14px; background:
+          radial-gradient(800px 300px at 0% 0%, rgba(99,102,241,0.08), transparent 60%),
+          linear-gradient(180deg, rgba(2,6,23,0.6), rgba(2,6,23,0.8));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+      }
+      .bubble { position: relative; margin: 10px 0; padding: 12px 14px; border-radius: 14px; max-width: 86%; white-space: pre-wrap; color: #e5e7eb; line-height: 1.35; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+      .me { background: linear-gradient(180deg, #1e40af, #1d4ed8); margin-left: auto; border: 1px solid rgba(59,130,246,0.35); }
+      .bot { background: linear-gradient(180deg, #0f172a, #111827); border: 1px solid #263043; }
+      .bubble.bot::before { content: "AI"; position: absolute; left: -36px; top: 4px; width: 28px; height: 28px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; box-shadow: 0 8px 16px rgba(109,40,217,0.35); }
+      .bubble.me::after { content: "You"; position: absolute; right: -36px; top: 4px; width: 28px; height: 28px; border-radius: 10px; background: linear-gradient(135deg, #0ea5e9, #22d3ee); color: #0b1020; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-shadow: 0 8px 16px rgba(14,165,233,0.35); }
+
+      /* Composer */
+      #composer { display: flex; gap: 8px; align-items: center; background: rgba(17,24,39,0.6); border: 1px solid #20263a; border-radius: 12px; padding: 8px; }
+      #msg { flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid #263043; background: #0b1220; color: var(--text); outline: none; }
+      #msg::placeholder { color: #64748b; }
+      a { color: #93c5fd; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <div class="title">RAG Site Chat</div>
+            <div class="hint">Ask questions grounded in a site</div>
+          </div>
+        </div>
+      </div>
+      <form id="site-form" style="display:flex; gap:8px; align-items:center;">
+        <input id="site" type="text" placeholder="Enter website (e.g., https://example.com)" autocomplete="off" required />
+        <button id="load" type="submit">Load</button>
+        <span id="status" style="font-size: 12px; color:#6b7280;"></span>
+      </form>
+      <div id="chat"></div>
+      <form id="composer">
+        <input id="msg" type="text" placeholder="Ask a question about the loaded site..." autocomplete="off" required />
+        <button id="send" type="submit">Send</button>
+      </form>
+    </div>
+    <script>
+      const qs = new URLSearchParams(location.search);
+      const BASE = qs.get('base') || 'http://localhost:8000';
+      const chatEl = document.getElementById('chat');
+      const form = document.getElementById('composer');
+      const input = document.getElementById('msg');
+      const sendBtn = document.getElementById('send');
+      const siteForm = document.getElementById('site-form');
+      const siteInput = document.getElementById('site');
+      const loadBtn = document.getElementById('load');
+      const statusEl = document.getElementById('status');
+      const sessionId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      let currentDomain = '';
+
+      function bubble(text, cls) {
+        const div = document.createElement('div');
+        div.className = 'bubble ' + cls;
+        div.textContent = text;
+        chatEl.appendChild(div);
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
+
+      siteForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        let site = siteInput.value.trim();
+        if (site && !site.startsWith('http://') && !site.startsWith('https://')) {
+          site = 'https://' + site;
+        }
+        if (!site) return;
+        statusEl.textContent = 'Indexing...';
+        loadBtn.disabled = true;
+        input.disabled = true;
+        sendBtn.disabled = true;
+        bubble(`Target site: ${site}`, 'bot');
+        try {
+          const res = await fetch(BASE + '/ingest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ site, max_pages: 40 })
+          });
+          const data = await res.json();
+          currentDomain = data.domain || '';
+          statusEl.textContent = `Indexed ${data.pages || 0} pages for ${currentDomain}`;
+          bubble(`Indexed ${data.pages || 0} pages for ${currentDomain}`, 'bot');
+        } catch (err) {
+          statusEl.textContent = 'Indexing failed';
+          bubble('Indexing failed: ' + (err && err.message ? err.message : err), 'bot');
+        } finally {
+          loadBtn.disabled = false;
+          input.disabled = false;
+          sendBtn.disabled = false;
+        }
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        if (!currentDomain) {
+          bubble('Please enter a website above first.', 'bot');
+          return;
+        }
+        bubble(text, 'me');
+        input.value = '';
+        sendBtn.disabled = true;
+        try {
+          const res = await fetch(BASE + '/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, message: text, k: 4, domain: currentDomain })
+          });
+          const data = await res.json();
+          let reply = data.reply || '';
+          if (data.sources && data.sources.length) {
+            const cites = data.sources
+              .map((s, i) => s.url ? `[${i+1}] ${s.url}` : `[${i+1}] ${s.type || ''}`)
+              .join('\n');
+            reply += (cites ? ('\n\n' + cites) : '');
+          }
+          bubble(reply, 'bot');
+        } catch (err) {
+          bubble('Error contacting server: ' + (err && err.message ? err.message : err), 'bot');
+        } finally {
+          sendBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
