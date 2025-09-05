@@ -1,14 +1,5 @@
 """
 CLI to ingest: website pages, orders CSV/JSON, and conversation logs JSONL.
-Usage examples:
-  python ingest.py --site https://example.com --max_pages 40
-  python ingest.py --orders ./orders.csv --domain myshop.com
-  python ingest.py --convos ./logs.jsonl --domain myshop.com
-
-Notes:
-- If --domain is provided, it is applied to metadata.domain for all documents.
-- If --domain is omitted, pages use the site's domain (derived from URL),
-  while orders and convos default to "global" for backward compatibility.
 """
 import csv, json, argparse
 from store import _upsert, pages, orders, chats
@@ -28,7 +19,7 @@ if args.site:
     derived = urllib.parse.urlparse(args.site).netloc or args.site
     page_domain = args.domain or derived
     for i, p in enumerate(crawl(args.site, max_pages=args.max_pages)):
-        if not p["text"].strip():
+        if not (p.get("text") or "").strip():
             continue
         docs.append(
             {

@@ -1,5 +1,5 @@
 """
-Chroma collections for pages, orders, and conversations. + lightweight session memory (SQLite via sqlite3)
+Chroma collections for pages, orders, and conversations. + lightweight session memory (SQLite)
 """
 from typing import Dict, Any, List
 import os, sqlite3, json, time
@@ -30,23 +30,14 @@ conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 conn.execute("CREATE TABLE IF NOT EXISTS sessions (session_id TEXT, role TEXT, content TEXT, ts REAL)")
 conn.commit()
 
-
 def add_session_turn(session_id: str, role: str, content: str):
-    conn.execute(
-        "INSERT INTO sessions VALUES (?,?,?,?)",
-        (session_id, role, content, time.time()),
-    )
+    conn.execute("INSERT INTO sessions VALUES (?,?,?,?)", (session_id, role, content, time.time()))
     conn.commit()
 
-
 def get_recent_session(session_id: str, k: int = 10) -> List[Dict[str, Any]]:
-    cur = conn.execute(
-        "SELECT role, content FROM sessions WHERE session_id=? ORDER BY ts DESC LIMIT ?",
-        (session_id, k),
-    )
+    cur = conn.execute("SELECT role, content FROM sessions WHERE session_id=? ORDER BY ts DESC LIMIT ?", (session_id, k))
     rows = cur.fetchall()[::-1]
     return [{"role": r, "content": c} for (r, c) in rows]
-
 
 def _upsert(collection, docs: List[Dict[str, Any]]):
     if not docs:
@@ -57,12 +48,16 @@ def _upsert(collection, docs: List[Dict[str, Any]]):
     embs = embed_texts([f"passage: {t}" for t in texts])
     collection.upsert(ids=ids, documents=texts, metadatas=metas, embeddings=embs)
 
-
 def query(collection, query_text: str, k: int = 5, where: Dict[str, Any] | None = None):
     where = where or {}
     q_emb = embed_texts([f"query: {query_text}"])
     # Request distances to enable score filtering downstream
-    res = collection.query(query_embeddings=q_emb, n_results=k, where=where, include=["distances", "metadatas", "documents", "embeddings"])
+    res = collection.query(
+        query_embeddings=q_emb,
+        n_results=k,
+        where=where,
+        include=["distances", "metadatas", "documents", "embeddings"],
+    )
     out = []
     n = len(res["ids"][0]) if res.get("ids") else 0
     for i in range(n):
